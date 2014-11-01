@@ -70,6 +70,7 @@ CP_A = $(CP) -R
 DIST_PREFIX=$(PWD)/auctex-dist
 FTPDIR = $(DIST_PREFIX)/ftp
 WWWDIR = $(DIST_PREFIX)/www
+CTANDIR = $(DIST_PREFIX)/ctan
 XEMACS_BUILD_DIR = xemacs-build
 PREVIEW_BUILD_DIR = preview-build
 COMMITTER="`git config --get user.name`\ \ \<`git config --get user.email`\>"
@@ -139,7 +140,7 @@ STYLEELC = $(STYLESRC:.el=.elc)
 
 CLEANFILES = $(AUCELC) $(STYLEELC) $(MULEELC)
 DISTCLEANFILES = Makefile tex-site.el tex-site.el.out auctex.el \
-	auto-loads.el config.*
+	auto-loads.el config.* preview/preview.el
 DISTTEXTS = FAQ INSTALL INSTALL.windows README TODO PROBLEMS.preview
 
 NOSEARCH = style/.nosearch
@@ -370,14 +371,17 @@ release-commit: check-tag
 	@echo "Tagging release $(TAG) in Git ..."
 	sleep 5
 	mv ChangeLog ChangeLog.old
+	mv preview/ChangeLog preview/ChangeLog.old
 # Make sure the release ChangeLog entry is encoded with ISO-8859-1.  This
 # requires the `iconv' program.
 	echo `date "+%Y-%m-%d "`" ${COMMITTER}" | iconv -t ISO-8859-1 - > ChangeLog
 	echo >> ChangeLog
 	echo "	* Version" $(TAG) released. >> ChangeLog
 	echo >> ChangeLog
+	cp ChangeLog preview/ChangeLog
 	cat ChangeLog.old >> ChangeLog
-	git commit -m 'Release_$(TAG)' -- ChangeLog
+	cat preview/ChangeLog.old >> preview/ChangeLog
+	git commit -m 'Release_$(TAG)' -- ChangeLog preview/ChangeLog
 	git tag release_`echo $(TAG) | sed -e 's/[.]/_/g'`
 	@echo
 	@echo "Congratulations!  Release $(TAG) of AUCTeX is ready."
@@ -525,6 +529,8 @@ preview-ball: check-tag
 	  preview/latex | tar -xC $(PREVIEW_BUILD_DIR) --strip-components=2
 	cd $(PREVIEW_BUILD_DIR) && make -f ../preview/latex/Makefile preview.ins preview.pdf
 	chmod -R go-w+rX $(PREVIEW_BUILD_DIR)
-	test -d $(FTPDIR) || mkdir -p $(FTPDIR)
-	cd $(PREVIEW_BUILD_DIR) && \
-	tar -cf - --owner=root --group=root README preview.dtx preview.ins preview.pdf | gzip --best > $(FTPDIR)/preview-$(TAG).tar.gz
+	test -d $(CTANDIR) || mkdir -p $(CTANDIR)
+# CTAN requires a top level directory "preview/" for the archive.
+	cd $(PREVIEW_BUILD_DIR) && mkdir -p preview && \
+	cp README preview.dtx preview.ins preview.pdf preview/ && \
+	tar -cf - --owner=root --group=root preview/ | gzip --best > $(CTANDIR)/preview-$(TAG).tar.gz
