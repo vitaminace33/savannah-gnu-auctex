@@ -138,7 +138,8 @@ STYLESRC = style/prosper.el \
 	   style/exercise.el  style/plext.el     style/cleveref.el \
 	   style/eso-pic.el   style/fontaxes.el  style/AnonymousPro.el \
 	   style/mdsymbol.el  style/MyriadPro.el style/textcomp.el \
-	   style/XCharter.el  style/zlmtt.el
+	   style/XCharter.el  style/zlmtt.el     style/ifluatex.el \
+	   style/luatextra.el
 STYLEELC = $(STYLESRC:.el=.elc)
 
 CLEANFILES = $(AUCELC) $(STYLEELC) $(MULEELC)
@@ -350,9 +351,11 @@ wc:
 # 4) windows-package WEMACSVER=<emacs-version> TAG=<tag>
 #    Create the precompiled AUCTeX package for Windows.
 #    This requires a compiled Emacs of the same version at location $WEMACS.
+#    NOTA BENE: you may need to use bash shell for this recipe to work.
 #
 # 5) release-sign TAG=<tag>
-#    Sign the tar ball and create directive files for upload.
+#    Sign the tar ball and create directive files for upload.  NOTA BENE: you
+#    may need to use bash shell for this recipe to work.
 #
 # 6) release-upload
 #    Upload files to GNU FTP server.
@@ -435,9 +438,24 @@ xemacs-package: check-tag
 WBUILDDIR=$(PWD)/windows-package
 WEMACS=/usr/src/emacs-$(WEMACSVER)/src/emacs
 WPACKAGE=auctex-$(TAG)-e$(WEMACSVER)-msw.zip
-WPACKAGEFILES=site-lisp/auctex site-lisp/site-start.d site-lisp/site-start.el \
-	site-lisp/tex-site.el var/auctex doc info/dir info/auctex.info* \
-	info/preview-latex.info*
+# Starting from Emacs 24.4, the name of the Windows package and the tree
+# structure of the package have been changed.  The following variables cater for
+# these differences.
+ifeq ($(shell echo "$(WEMACSVER)" | grep '\(2[2-3].[1-4]\|24.[1-3]\)' -),$(WEMACSVER))
+	WEMACSDATAROOTDIR=""
+	WEMACSEXTRACTDIR=""
+	WEMACSPACKAGE="emacs-$(WEMACSVER)-bin-i386.zip"
+	WEMACSSITELISP="site-lisp"
+else
+	WEMACSDATAROOTDIR="share/"
+	WEMACSEXTRACTDIR="emacs-$(WEMACSVER)"
+	WEMACSPACKAGE="emacs-$(WEMACSVER)-bin-i686-pc-mingw32.zip"
+	WEMACSSITELISP="$(WEMACSDATAROOTDIR)/emacs/site-lisp"
+endif
+WPACKAGEFILES=$(WEMACSSITELISP)/auctex $(WEMACSSITELISP)/site-start.d \
+	$(WEMACSSITELISP)/site-start.el $(WEMACSSITELISP)/tex-site.el \
+	var/auctex $(WEMACSDOC) $(WEMACSDATAROOTDIR)doc $(WEMACSDATAROOTDIR)info/dir \
+	$(WEMACSDATAROOTDIR)info/auctex.info* $(WEMACSDATAROOTDIR)info/preview-latex.info*
 windows-package: check-tag
 	@if [ "X$(WEMACSVER)" = "X" ]; then \
 	  echo "*** Error: No Emacs version (WEMACSVER) ***"; \
@@ -445,9 +463,9 @@ windows-package: check-tag
 	fi
 # Make sure the prerequisites are available
 	test -d $(WBUILDDIR) || mkdir $(WBUILDDIR)
-	test -f $(WBUILDDIR)/emacs-$(WEMACSVER)-bin-i386.zip \
+	test -f $(WBUILDDIR)/$(WEMACSPACKAGE) \
 	|| { cd $(WBUILDDIR) \
-	&& wget http://ftp.gnu.org/gnu/emacs/windows/emacs-$(WEMACSVER)-bin-i386.zip; }
+	&& wget http://ftp.gnu.org/gnu/emacs/windows/$(WEMACSPACKAGE); }
 	test -f $(WBUILDDIR)/auctex-$(TAG).zip \
 	|| { test -f $(FTPDIR)/auctex-$(TAG).zip \
 	  && $(CP) $(FTPDIR)/auctex-$(TAG).zip $(WBUILDDIR); } \
@@ -457,11 +475,11 @@ windows-package: check-tag
 	cd $(WBUILDDIR) \
 	&& rm -rf emacs-$(WEMACSVER) \
 	&& rm -rf auctex-$(TAG) \
-	&& unzip emacs-$(WEMACSVER)-bin-i386.zip \
+	&& unzip -d "$(WEMACSEXTRACTDIR)" $(WEMACSPACKAGE) \
 	&& unzip auctex-$(TAG).zip
 	rm -f $(WPACKAGE)
 # Create site-start.el and site-start.d
-	cd $(WBUILDDIR)/emacs-$(WEMACSVER)/site-lisp \
+	cd $(WBUILDDIR)/emacs-$(WEMACSVER)/$(WEMACSSITELISP) \
 	&& echo -e ";; Load files in \`site-start.d' directory.\
 \n(dolist (file (directory-files\
 \n	       (concat (file-name-directory load-file-name) \"site-start.d\")\
@@ -472,13 +490,14 @@ windows-package: check-tag
 	cd $(WBUILDDIR)/auctex-$(TAG) \
 	&& ./configure --prefix=$(WBUILDDIR)/emacs-$(WEMACSVER) \
 	  --without-texmf-dir --with-emacs=$(WEMACS) \
-	  --with-lispdir=$(WBUILDDIR)/emacs-$(WEMACSVER)/site-lisp \
-	  --datarootdir=$(WBUILDDIR)/emacs-$(WEMACSVER) \
+	  --with-lispdir=$(WBUILDDIR)/emacs-$(WEMACSVER)/$(WEMACSSITELISP) \
+	  --datarootdir=$(WBUILDDIR)/emacs-$(WEMACSVER)/$(WEMACSDATAROOTDIR) \
 	&& make \
 	&& sed -i -e 's/"\/[^\n]\+/(expand-file-name "..\/var\/auctex" (file-name-directory load-file-name))/' tex-site.el \
 	&& make install
 # Create the package
 	test -d $(FTPDIR) || mkdir -p $(FTPDIR)
+	rm -f $(FTPDIR)/$(WPACKAGE)
 	cd $(WBUILDDIR)/emacs-$(WEMACSVER) \
 	&& zip -r $(FTPDIR)/$(WPACKAGE) $(WPACKAGEFILES)
 
