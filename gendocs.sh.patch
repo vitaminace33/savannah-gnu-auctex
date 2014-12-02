@@ -1,0 +1,54 @@
+--- gendocs.sh.orig	2014-10-29 14:25:47.404620794 +0100
++++ gendocs.sh	2014-10-29 14:35:45.812600075 +0100
+@@ -320,9 +320,9 @@
+     tar -czf "$abs_outdir/${PACKAGE}.html_$1.tar.gz" -- *.html
+   )
+   eval html_$1_tgz_size=`calcsize "$outdir/${PACKAGE}.html_$1.tar.gz"`
+-  rm -f "$outdir"/html_$1/*.html
+-  mkdir -p "$outdir/html_$1/"
+-  mv ${split_html_dir}/*.html "$outdir/html_$1/"
++  rm -f "$outdir"/${PACKAGE}/*.html
++  mkdir -p "$outdir/${PACKAGE}/"
++  mv ${split_html_dir}/*.html "$outdir/${PACKAGE}/"
+   rmdir ${split_html_dir}
+ }
+ 
+@@ -368,8 +368,8 @@
+   mv $PACKAGE.html "$outdir/"
+ 
+   html_split node
+-  html_split chapter
+-  html_split section
++#   html_split chapter
++#   html_split section
+ fi
+ 
+ printf "\nMaking .tar.gz for sources...\n"
+@@ -421,13 +421,13 @@
+ fi
+ 
+ printf "\nMaking index file...\n"
+-if test -z "$use_texi2html"; then
++# if test -z "$use_texi2html"; then
+   CONDS="/%%IF  *HTML_SECTION%%/,/%%ENDIF  *HTML_SECTION%%/d;\
+          /%%IF  *HTML_CHAPTER%%/,/%%ENDIF  *HTML_CHAPTER%%/d"
+-else
+-  # should take account of --split here.
+-  CONDS="/%%ENDIF.*%%/d;/%%IF  *HTML_SECTION%%/d;/%%IF  *HTML_CHAPTER%%/d"
+-fi
++# else
++#   # should take account of --split here.
++#   CONDS="/%%ENDIF.*%%/d;/%%IF  *HTML_SECTION%%/d;/%%IF  *HTML_CHAPTER%%/d"
++# fi
+ 
+ curdate=`$SETLANG date '+%B %d, %Y'`
+ sed \
+@@ -454,7 +454,7 @@
+    -e "s,%%SCRIPTURL%%,$scripturl,g" \
+    -e "s!%%SCRIPTNAME%%!$prog!g" \
+    -e "$CONDS" \
+-$GENDOCS_TEMPLATE_DIR/gendocs_template >"$outdir/index.html"
++$GENDOCS_TEMPLATE_DIR/gendocs_template >"$outdir/${PACKAGE}.index.html"
+ 
+ echo "Done, see $outdir/ subdirectory for new files."
+ 

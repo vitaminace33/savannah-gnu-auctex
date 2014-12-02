@@ -578,6 +578,7 @@ release-upload:
 	ncftpput ftp-upload.gnu.org /incoming/ftp $(FTPDIR)/*
 
 # AUCTeX and preview-latex manuals for the home page
+GENDOCSPATCH=gendocs.sh.patch
 www-doc: check-tag
 	rm -rf $(WWWDIR)
 	mkdir -p $(WWWDIR)/manual
