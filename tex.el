@@ -1104,11 +1104,9 @@ of point in emacs by using Evince's DBUS API.  Used by default
 for the Evince viewer entry in `TeX-view-program-list-builtin' if
 the requirements are met."
   (require 'url-util)
-  (let* ((uri (concat "file://" (let ((url-unreserved-chars
-				       (cons ?, (cons ?/ url-unreserved-chars))))
-				  (url-hexify-string
-				   (expand-file-name
-				    (concat file "." (TeX-output-extension)))))))
+  (let* ((uri (concat "file://" (url-encode-url
+				 (expand-file-name
+				  (concat file "." (TeX-output-extension))))))
 	 (owner (dbus-call-method
 		 :session "org.gnome.evince.Daemon"
 		 "/org/gnome/evince/Daemon"
@@ -3701,7 +3699,10 @@ If TEX is a directory, generate style files for all files in the directory."
 	    (class-opts (if (boundp 'LaTeX-provided-class-options)
 			    LaTeX-provided-class-options))
 	    (pkg-opts (if (boundp 'LaTeX-provided-package-options)
-			  LaTeX-provided-package-options)))
+			  LaTeX-provided-package-options))
+	    (verb-envs          LaTeX-verbatim-environments-local)
+	    (verb-macros-delims LaTeX-verbatim-macros-with-delims-local)
+	    (verb-macros-braces LaTeX-verbatim-macros-with-braces-local))
 	(TeX-unload-style style)
 	(with-current-buffer (generate-new-buffer file)
 	  (erase-buffer)
@@ -3713,6 +3714,18 @@ If TEX is a directory, generate style files for all files in the directory."
 	  (when pkg-opts
 	    (insert "\n   (TeX-add-to-alist 'LaTeX-provided-package-options\n"
 		    "                     '" (prin1-to-string pkg-opts) ")"))
+	  (dolist (env verb-envs)
+	    (insert
+	     (format "\n  (add-to-list 'LaTeX-verbatim-environments-local \"%s\")"
+		     env)))
+	  (dolist (env verb-macros-braces)
+	    (insert
+	     (format "\n  (add-to-list 'LaTeX-verbatim-macros-with-braces-local \"%s\")"
+		     env)))
+	  (dolist (env verb-macros-delims)
+	    (insert
+	     (format "\n  (add-to-list 'LaTeX-verbatim-macros-with-delims-local \"%s\")"
+		     env)))
 	  (mapc (lambda (el) (TeX-auto-insert el style))
 		TeX-auto-parser)
 	  (insert "))\n\n")
