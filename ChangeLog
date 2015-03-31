@@ -1,3 +1,45 @@
+2015-03-30  Mosè Giordano  <mose@gnu.org>
+
+	* latex.el (LaTeX-begin-regexp): Add "\[".
+	(LaTeX-indent-calculate): Remove indentation of "\[...\]" from
+	here, it is automatically done in `LaTeX-indent-level-count' now
+	that `LaTeX-begin-regexp' has "\[".  (Bug#20227)
+
+2015-03-28  Mosè Giordano  <mose@gnu.org>
+
+	* style/acro.el:
+
+	* style/acronym.el:
+
+	* style/caption.el:
+
+	* style/color.el:
+
+	* style/enumitem.el:
+
+	* style/geometry.el:
+
+	* style/minted.el:
+
+	* style/pst-plot.el:
+
+	* style/pstricks.el:
+
+	* style/siunitx.el: Update copyright years and add
+	`TeX-auto-parse' to `TeX-update-style-hook'.
+
+2015-03-28  Arash Esbati  <esbati@gmx.de>
+
+	* Makefile.in (STYLESRC): Add new style.
+
+	* style/colortbl.el: New file.
+
+	* style/ltxtable.el ("ltxtable"): Ask for a `Width' and not for a
+	`Length' in minibuffer.
+
+	* latex.el (LaTeX-common-initialization): Add standard LaTeX
+	lengths `arraycolsep', `arrayrulewidth' and `doublerulesep'.
+
 2015-03-23  Tassilo Horn  <tsdh@gnu.org>
 
 	* tex.el (TeX-run-style-hooks): Apply style hooks in reverse
