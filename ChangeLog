@@ -1,3 +1,44 @@
+2015-07-21  Arash Esbati  <esbati@gmx.de>
+
+	* style/nameref.el ("nameref"): Add missing commands `\nameref*'
+	and `\Nameref'.
+
+	* style/textpos.el ("textpos"): Fix the name of the provided env's
+	which is `textblock' and not `textpos'.
+
+2015-07-18  Arash Esbati  <esbati@gmx.de>
+
+	* latex.el (LaTeX-common-initialization): Query for the default
+	value of first arg when (re-)defining new environments.
+
+	* Makefile.in (STYLESRC): Add new style.
+
+	* style/vwcol.el: New file.
+
+	* Makefile.in (STYLESRC): Add new style.
+
+	* style/textpos.el: New file.
+
+	* Makefile.in (STYLESRC): Add new style.
+
+	* style/environ.el: New file.
+
+	* style/tabulary.el ("tabulary"): Add `LCRJ' to
+	`LaTeX-array-column-letters'.
+
+	* style/tabularx.el ("tabularx"): Add `X' to
+	`LaTeX-array-column-letters'.
+
+	* style/array.el: Parse user-defined new column types and add them
+	to `LaTeX-array-column-letters'.
+
+2015-07-09  Mosè Giordano  <mose@gnu.org>
+
+	* latex/README: restore file deleted by mistake when preview/
+	directory has been moved to top level.
+
+	* Makefile.in: Use everywhere $(MAKE) in place of make.
+
 2015-06-21  Mosè Giordano  <mose@gnu.org>
 
 	* tex-buf.el (TeX-LaTeX-sentinel): Add support for hf-tikz
