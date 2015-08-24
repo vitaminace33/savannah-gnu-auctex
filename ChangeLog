@@ -1,3 +1,55 @@
+2015-08-24  Tassilo Horn  <tsdh@gnu.org>
+
+	* tex.el (VirTeX-common-initialization): Add support for
+	`prettify-symbols-mode'.
+
+2015-08-21  Mosè Giordano  <mose@gnu.org>
+
+	* tex-buf.el (TeX-check-engine): New customizable variable.
+	(TeX-check-engine-list): New variable.
+	(TeX-check-engine-add-engines): New function.
+	(TeX-check-engine): New function.
+	(TeX-command): Use `TeX-check-engine' and update docstring
+	accordingly.
+
+	* style/fontspec.el ("fontspec"): Add engine restrictions.
+
+	* doc/auctex.texi (Processor Options): Document
+	`TeX-check-engine'.
+
+	* doc/changes.texi: Mention `TeX-check-engine'.
+
+2015-08-20  Mosè Giordano  <mose@gnu.org>
+
+	* tex-buf.el (TeX-error-overview-jump-to-source)
+	(TeX-error-overview-goto-log): New functions.
+	(TeX-error-overview-mode-map): Add
+	`TeX-error-overview-jump-to-source' and
+	`TeX-error-overview-goto-log'.
+	(TeX-error-overview-menu): Define menu for TeX error overview.
+	(TeX-error-overview-mode): Add menu.
+
+	* doc/auctex.texi (top)
+	(Debugging): Add section for error overview.
+	(Error overview): Document new functions and keys.
+
+2015-08-19  Mosè Giordano  <mose@gnu.org>
+
+	* latex.el (LaTeX-label): Mention in the docstring the returned
+	value.  Let-bind `TeX-read-label-prefix' and use `TeX-read-label'
+	to read the label.
+	(TeX-read-label-prefix): New variable.
+	(TeX-read-label): New function.
+	(TeX-arg-label): Use `TeX-read-label' and mention
+	`TeX-read-label-prefix' in docstring.
+	(TeX-arg-define-label): Mention `TeX-read-label-prefix' in
+	docstring.
+
+2015-08-14  Arash Esbati  <esbati@gmx.de>
+
+	* latex.el (LaTeX-common-initialization): Fix the subgroup number
+	in the regex for `\\(this\\)?pagestyle'
+
 2015-08-10  Tassilo Horn  <tsdh@gnu.org>
 
 	* latex.el (TeX-latex-mode): Call LaTeX-preview-setup only if its

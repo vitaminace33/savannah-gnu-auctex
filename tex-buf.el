@@ -332,6 +332,96 @@ This works only with TeX commands and if the
 (defconst TeX-error-overview-buffer-name "*TeX errors*"
   "Name of the buffer in which to show error list.")
 
+(defcustom TeX-check-engine t
+  "Whether AUCTeX should check the correct engine has been set before running LaTeX commands."
+  :group 'TeX-command
+  :type 'boolean)
+
+(defvar TeX-check-engine-list '(default luatex omega xetex)
+  "List of engines required by the loaded TeX packages.
+
+Do not set this variable directly, use
+`TeX-check-engine-add-engines' to specify required engines.")
+(make-variable-buffer-local 'TeX-check-engine-list)
+
+(defun TeX-check-engine-add-engines (&rest engines)
+  "Add ENGINES to list of required engines.
+
+Set `TeX-check-engine-list' to the intersection between the list
+itself and the list of provided engines.
+
+See for example style/fontspec.el"
+  (let ((list TeX-check-engine-list)
+	(res nil))
+    (setq TeX-check-engine-list
+	  ;; The following is based on the definition of `cl-intersection' of
+	  ;; GNU Emacs.
+	  (and list engines
+	       (if (equal list engines) list
+		 (or (>= (length list) (length engines))
+		     (setq list (prog1 engines (setq engines list))))
+		 (while engines
+		   (if (memq (car engines) list)
+		       (push (car engines) res))
+		   (pop engines))
+		 res)))))
+
+(defun TeX-check-engine (name)
+  "Check the correct engine has been set.
+
+Look into `TeX-check-engine-list' for the required engines.
+
+NAME is the command to be run.  Actually do the check only if the
+variable `TeX-check-engine' is non-nil and LaTeX is the command
+to be run."
+  (and
+   (string= name "LaTeX")
+   TeX-check-engine
+   TeX-check-engine-list
+   (null (memq TeX-engine TeX-check-engine-list))
+   (memq TeX-engine '(default luatex omega xetex))
+   ;; The set engine is not listed in `TeX-check-engine-list'.  We check only
+   ;; builtin engines because we can't take care of custom ones.  Do nothing if
+   ;; there is no allowed engine, we don't know what to do in that case.
+   (let ((length (length TeX-check-engine-list))
+	 (name-alist '((default . "TeX")
+		       (luatex  . "LuaTeX")
+		       (omega   . "Omega")
+		       (xetex   . "XeTeX")))
+	 (completion-ignore-case t)
+	 (engine nil))
+     (when
+	 (cond
+	  ;; There is exactly one allowed engine.
+	  ((= length 1)
+	   (setq engine (car TeX-check-engine-list))
+	   (y-or-n-p (format "%s is required to build this document.
+Do you want to use this engine?" (cdr (assoc engine name-alist)))))
+	  ;; More than one engine is allowed.
+	  ((> length 1)
+	   (if (y-or-n-p (format "%s are required to build this document.
+Do you want to select one of these engines?"
+				 (mapconcat
+				  (lambda (elt) (cdr (assoc elt name-alist)))
+				  TeX-check-engine-list ", ")))
+	       (setq engine
+		     (car (rassoc
+			   (completing-read
+			    (format
+			     "Choose between %s: "
+			     (mapconcat
+			      (lambda (elt) (cdr (assoc elt name-alist)))
+			      TeX-check-engine-list ", "))
+			    (mapcar
+			     (lambda (elt) (cdr (assoc elt name-alist)))
+			     TeX-check-engine-list))
+			   name-alist))))))
+       (TeX-engine-set engine)
+       (when (and (fboundp 'add-file-local-variable)
+		  (y-or-n-p "Do you want to remember the choice?"))
+	 (add-file-local-variable 'TeX-engine engine)
+	 (save-buffer))))))
+
 (defun TeX-command (name file &optional override-confirm)
   "Run command NAME on the file returned by calling FILE.
 
@@ -343,7 +433,12 @@ Use the information in `TeX-command-list' to determine how to run
 the command.
 
 If OVERRIDE-CONFIRM is a prefix argument, confirmation will be
-asked if it is positive, and suppressed if it is not."
+asked if it is positive, and suppressed if it is not.
+
+Run function `TeX-check-engine' to check the correct engine has
+been set."
+  (TeX-check-engine name)
+
   (cond ((eq file 'TeX-region-file)
 	 (setq TeX-current-process-region-p t))
 	((eq file 'TeX-master-file)
@@ -2701,6 +2796,21 @@ forward, if negative)."
   (interactive "p")
   (TeX-error-overview-next-error (- arg)))
 
+(defun TeX-error-overview-jump-to-source ()
+  "Display the help and move point to the error source."
+  (interactive)
+  (TeX-error-overview-goto-source)
+  (pop-to-buffer
+   (save-window-excursion
+     (select-window TeX-error-overview-orig-window)
+     (current-buffer))))
+
+(defun TeX-error-overview-goto-log ()
+  "Display the current error in log buffer."
+  (interactive)
+  (let ((TeX-display-help 'expert))
+    (TeX-error-overview-goto-source)))
+
 (defun TeX-error-overview-quit ()
   "Delete the window or the frame of the error overview."
   (interactive)
@@ -2712,12 +2822,32 @@ forward, if negative)."
 (defvar TeX-error-overview-mode-map
   (let ((map (make-sparse-keymap))
 	(menu-map (make-sparse-keymap)))
+    (define-key map "j"    'TeX-error-overview-jump-to-source)
+    (define-key map "l"    'TeX-error-overview-goto-log)
     (define-key map "n"    'TeX-error-overview-next-error)
     (define-key map "p"    'TeX-error-overview-previous-error)
     (define-key map "q"    'TeX-error-overview-quit)
     (define-key map "\C-m" 'TeX-error-overview-goto-source)
     map)
   "Local keymap for `TeX-error-overview-mode' buffers.")
+
+(easy-menu-define TeX-error-overview-menu
+  TeX-error-overview-mode-map
+  "Menu used in TeX error overview mode."
+  (TeX-menu-with-help
+   '("TeX errors"
+     ["Next error" TeX-error-overview-next-error
+      :help "Jump to the next error"]
+     ["Previous error" TeX-error-overview-previous-error
+      :help "Jump to the previous error"]
+     ["Go to source" TeX-error-overview-goto-source
+      :help "Show the error in the source"]
+     ["Jump to source" TeX-error-overview-jump-to-source
+      :help "Move point to the error in the source"]
+     ["Go to log" TeX-error-overview-goto-log
+      :help "Show the error in the log buffer"]
+     ["Quit" TeX-error-overview-quit
+      :help "Quit"])))
 
 (defvar TeX-error-overview-list-entries nil
   "List of errors to be used in the error overview.")
@@ -2732,7 +2862,8 @@ forward, if negative)."
         tabulated-list-padding 1
         tabulated-list-entries TeX-error-overview-list-entries)
   (tabulated-list-init-header)
-  (tabulated-list-print))
+  (tabulated-list-print)
+  (easy-menu-add TeX-error-overview-menu TeX-error-overview-mode-map))
 
 (defcustom TeX-error-overview-frame-parameters
   '((name . "TeX errors")
