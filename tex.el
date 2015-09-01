@@ -150,8 +150,12 @@ If nil, none is specified."
     ("Print" "%p" TeX-run-command t t :help "Print the file")
     ("Queue" "%q" TeX-run-background nil t :help "View the printer queue"
      :visible TeX-queue-command)
-    ("File" "%(o?)dvips %d -o %f " TeX-run-command t t
+    ("File" "%(o?)dvips %d -o %f " TeX-run-dvips t t
      :help "Generate PostScript file")
+    ("Dvips" "%(o?)dvips %d -o %f " TeX-run-dvips nil t
+     :help "Convert DVI file to PostScript")
+    ("Ps2pdf" "ps2pdf %f" TeX-run-ps2pdf nil t
+     :help "Convert PostScript file to PDF")
     ("Index" "makeindex %s" TeX-run-command nil t :help "Create index file")
     ("Xindy" "texindy %s" TeX-run-command nil t
      :help "Run xindy to create index file")
@@ -445,8 +449,9 @@ string."
 	    (TeX-style-check LaTeX-command-style)))
     ("%(PDF)" (lambda ()
 		(if (and (eq TeX-engine 'default)
-			 (or TeX-PDF-mode
-			     TeX-DVI-via-PDFTeX))
+			 (if TeX-PDF-mode
+			     (not TeX-PDF-via-dvips-ps2pdf)
+			   TeX-DVI-via-PDFTeX))
 		    "pdf"
 		  "")))
     ("%(PDFout)" (lambda ()
@@ -1276,13 +1281,6 @@ restarting Emacs."
 	     (repeat :tag "List of executables" (string :tag "Name"))
 	     (const :tag "No executable" nil)))))
 
-;; XXX: Regarding a possibility to (manually) run an update command,
-;; one could support this through `TeX-view' by letting it temporarily
-;; set a variable which is checked with a predicate in the viewer
-;; selection.  If the check is positive, the update command is run
-;; instead of the normal viewer command.  Direct support through the
-;; View command would require a predicate which knows when an update
-;; has to be done.
 (defcustom TeX-view-program-selection
   (cond
    ((eq system-type 'windows-nt)
@@ -1930,6 +1928,20 @@ already established, don't do anything."
   :group 'TeX-command
   :type 'boolean)
 
+(defcustom TeX-PDF-via-dvips-ps2pdf nil
+  "Whether to produce PDF output through the (La)TeX - dvips - ps2pdf sequence."
+  :group 'TeX-command
+  :type 'boolean)
+(make-variable-buffer-local 'TeX-PDF-via-dvips-ps2pdf)
+(put 'TeX-PDF-via-dvips-ps2pdf 'safe-local-variable 'booleanp)
+
+(defun TeX-toggle-PDF-via-dvips-ps2pdf ()
+  "Toggle `TeX-PDF-via-dvips-ps2pdf'."
+  (interactive)
+  (setq TeX-PDF-via-dvips-ps2pdf (not TeX-PDF-via-dvips-ps2pdf))
+  (message (concat "TeX-PDF-via-dvips-ps2pdf: "
+		   (if TeX-PDF-via-dvips-ps2pdf "on" "off"))))
+
 (define-minor-mode TeX-interactive-mode
   "Minor mode for interactive runs of TeX."
   nil nil nil
@@ -2050,6 +2062,10 @@ output files."
 	    (delete-file (concat master-dir file))))
       (message "No files to be deleted"))))
 
+(defun TeX-update ()
+  "Compile the current document until an error occurs or it is finished."
+  (interactive)
+  (TeX-command-sequence t t))
 
 ;;; Master File
 
@@ -4667,6 +4683,7 @@ Brace insertion is only done if point is in a math construct and
     (define-key map "\C-c\C-r" 'TeX-command-region)
     (define-key map "\C-c\C-b" 'TeX-command-buffer)
     (define-key map "\C-c\C-c" 'TeX-command-master)
+    (define-key map "\C-c\C-u" 'TeX-update)
     (define-key map "\C-c\C-k" 'TeX-kill-job)
     (define-key map "\C-c\C-l" 'TeX-recenter-output-buffer)
     (define-key map "\C-c^" 'TeX-home-buffer)
@@ -4752,6 +4769,10 @@ Brace insertion is only done if point is in a math construct and
 	 :style toggle :selected TeX-PDF-mode
 	 :active (not (eq TeX-engine 'omega))
 	 :help "Use PDFTeX to generate PDF instead of DVI"]
+       [ "PDF via dvips + ps2pdf" TeX-toggle-PDF-via-dvips-ps2pdf
+	 :style toggle :selected TeX-PDF-via-dvips-ps2pdf
+	 :visible TeX-PDF-mode
+	 :help "Compile with (La)TeX and convert to PDF with dvips + ps2pdf"]
        [ "Run Interactively" TeX-interactive-mode
 	 :style toggle :selected TeX-interactive-mode :keys "C-c C-t C-i"
 	 :help "Stop on errors in a TeX run"]
@@ -4763,7 +4784,9 @@ Brace insertion is only done if point is in a math construct and
 	:help "Make \"Next Error\" show overfull and underfull boxes"]
        ["Debug Warnings" TeX-toggle-debug-warnings
 	:style toggle :selected TeX-debug-warnings
-	:help "Make \"Next Error\" show warnings"])))
+	:help "Make \"Next Error\" show warnings"])
+      ["Compile and view" TeX-update
+       :help "Compile the document until it is ready and open the viewer"]))
    (let ((file 'TeX-command-on-current)) ;; is this actually needed?
      (TeX-maybe-remove-help
       (delq nil

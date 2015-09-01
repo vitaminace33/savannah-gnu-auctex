@@ -1,6 +1,6 @@
 ;;; tex-buf.el --- External commands for AUCTeX.
 
-;; Copyright (C) 1991-1999, 2001-2014 Free Software Foundation, Inc.
+;; Copyright (C) 1991-1999, 2001-2015 Free Software Foundation, Inc.
 
 ;; Maintainer: auctex-devel@gnu.org
 ;; Keywords: tex, wp
@@ -322,7 +322,7 @@ This works only with TeX commands and if the
 	  (TeX-parse-TeX (- arg) nil)
 	;; XXX: moving backward in the errors hasn't yet been implemented for
 	;; other parsing functions.
-	(error "Jumping to previous error not supported.")))))
+	(error "Jumping to previous error not supported")))))
 
 ;;; Command Query
 
@@ -522,8 +522,8 @@ without further expansion."
 (defun TeX-check-files (derived originals extensions)
   "Check if DERIVED is newer than any of the ORIGINALS.
 Try each original with each member of EXTENSIONS, in all directories
-in `TeX-check-path'. Returns true if any of the ORIGINALS with any of the
-EXTENSIONS are newer than DERIVED. Will prompt to save the buffer of any
+in `TeX-check-path'.  Returns true if any of the ORIGINALS with any of the
+EXTENSIONS are newer than DERIVED.  Will prompt to save the buffer of any
 ORIGINALS which are modified but not saved yet."
   (let (existingoriginals
         found
@@ -555,6 +555,114 @@ ORIGINALS which are modified but not saved yet."
           (setq found t)))
     found))
 
+(defcustom TeX-command-sequence-max-runs-same-command 4
+  "Maximum number of runs of the same command."
+  :type 'integer
+  :group 'TeX-command)
+
+(defcustom TeX-command-sequence-max-runs 12
+  "Maximum number of total runs."
+  :type 'integer
+  :group 'TeX-command)
+
+(defvar TeX-command-sequence-count-same-command 1
+  "Counter for the runs of the same command in `TeX-command-sequence'.")
+
+(defvar TeX-command-sequence-count 1
+  "Counter for the total runs of `TeX-command-sequence'.")
+
+(defvar TeX-command-sequence-last-command nil
+  "Last command run in `TeX-command-sequence'.")
+
+(defvar TeX-command-sequence-sentinel nil
+  "Sentinel for `TeX-command-sequence'.")
+
+(defvar TeX-command-sequence-command nil
+  "Command argument for `TeX-command-sequence'.
+
+It is set in `TeX-command-sequence' and used in
+`TeX-command-sequence-sentinel' to call again
+`TeX-command-sequence' with the appropriate command argument.")
+
+(defun TeX-command-sequence (command &optional reset)
+  "Run a sequence of TeX commands defined by COMMAND.
+
+The COMMAND argument may be
+
+  * nil: no command will be run in this case
+
+  * a string with a command from `TeX-command-list'
+
+  * a non-nil list of strings, which are commands from
+    `TeX-command-list'; the car of the list is used as command to
+    be executed in the first run of `TeX-command-sequence', the
+    cdr of the list will be passed to the function in the next
+    run, etc.
+
+  * a function name, returning a string which is command from
+    `TeX-command-list'; it will be funcall'd (without arguments!)
+    and used again in the next run of `TeX-command-sequence'.
+
+  * with any other value the function `TeX-command-default' is
+    used to determine the command to run, until a stopping
+    condition is met.
+
+This function runs at most
+`TeX-command-sequence-max-runs-same-command' times the same
+command in a row, and `TeX-command-sequence-max-runs' times in
+total in any case.  It ends when `TeX-command-Show' is the
+command to be run.
+
+A non-nil value for the optional argument RESET means this is the
+first run of the function and some variables need to be reset."
+  (if (null command)
+      (message "No command to run.")
+    (let (cmd process)
+      (cond
+       ((stringp command)
+	(setq cmd command
+	      TeX-command-sequence-command nil))
+       ((listp command)
+	(setq cmd (pop command)
+	      TeX-command-sequence-command command))
+       ((functionp command)
+	(setq cmd (funcall command)
+	      TeX-command-sequence-command command))
+       (t
+	(setq cmd (TeX-command-default (TeX-master-file))
+	      TeX-command-sequence-command t)))
+      (TeX-command cmd 'TeX-master-file 0)
+      (when reset
+	(setq TeX-command-sequence-count-same-command 1
+	      TeX-command-sequence-count 1
+	      TeX-command-sequence-last-command nil))
+      (cond
+       ;; Stop when the same command has been run
+       ;; `TeX-command-sequence-max-runs-same-command' times in a row.
+       ((>= TeX-command-sequence-count-same-command
+	    TeX-command-sequence-max-runs-same-command)
+	(message "Stopping after running %S %d times in a row."
+		 TeX-command-sequence-last-command
+		 TeX-command-sequence-count-same-command))
+       ;; Stop when there have been `TeX-command-sequence-max-runs' total
+       ;; compilations.
+       ((>= TeX-command-sequence-count TeX-command-sequence-max-runs)
+	(message "Stopping after %d compilations." TeX-command-sequence-count))
+       ;; The command just run is `TeX-command-Show'.
+       ((equal command TeX-command-Show))
+       ;; In any other case continue: increase counters (when needed), update
+       ;; `TeX-command-sequence-last-command' and run the sentinel.
+       (t
+	(if (equal cmd TeX-command-sequence-last-command)
+	    (setq TeX-command-sequence-count-same-command
+		  (1+ TeX-command-sequence-count-same-command))
+	  (setq TeX-command-sequence-count-same-command 1))
+	(setq TeX-command-sequence-count (1+ TeX-command-sequence-count)
+	      TeX-command-sequence-last-command cmd)
+	(and (setq process (get-buffer-process (current-buffer)))
+	     (setq TeX-command-sequence-sentinel (process-sentinel process))
+	     (set-process-sentinel process 'TeX-command-sequence-sentinel)))))))
+
 (defcustom TeX-save-query t
   "*If non-nil, ask user for permission to save files before starting TeX."
   :group 'TeX-command
@@ -562,29 +670,34 @@ ORIGINALS which are modified but not saved yet."
 
 (defvar TeX-command-history nil)
 
+(defun TeX-command-default (name)
+  "Guess the next command to be run on NAME."
+  (cond ((if (string-equal name TeX-region)
+	     (TeX-check-files (concat name "." (TeX-output-extension))
+			      (list name)
+			      TeX-file-extensions)
+	   (TeX-save-document (TeX-master-file)))
+	 TeX-command-default)
+	((and (memq major-mode '(doctex-mode latex-mode))
+	      ;; Want to know if bib file is newer than .bbl
+	      ;; We don't care whether the bib files are open in emacs
+	      (TeX-check-files (concat name ".bbl")
+			       (mapcar 'car
+				       (LaTeX-bibliography-list))
+			       (append BibTeX-file-extensions
+				       TeX-Biber-file-extensions)))
+	 ;; We should check for bst files here as well.
+	 (if LaTeX-using-Biber TeX-command-Biber TeX-command-BibTeX))
+	((TeX-process-get-variable name
+				   'TeX-command-next
+				   (if (and TeX-PDF-via-dvips-ps2pdf TeX-PDF-mode)
+				       "Dvips"
+				     TeX-command-Show)))
+	(TeX-command-Show)))
+
 (defun TeX-command-query (name)
   "Query the user for what TeX command to use."
-  (let* ((default
-	   (cond ((if (string-equal name TeX-region)
-		      (TeX-check-files (concat name "." (TeX-output-extension))
-				       (list name)
-				       TeX-file-extensions)
-		    (TeX-save-document (TeX-master-file)))
-		  TeX-command-default)
-		 ((and (memq major-mode '(doctex-mode latex-mode))
-		       ;; Want to know if bib file is newer than .bbl
-		       ;; We don't care whether the bib files are open in emacs
-		       (TeX-check-files (concat name ".bbl")
-					(mapcar 'car
-						(LaTeX-bibliography-list))
-					(append BibTeX-file-extensions
-						TeX-Biber-file-extensions)))
-		  ;; We should check for bst files here as well.
-		  (if LaTeX-using-Biber TeX-command-Biber TeX-command-BibTeX))
-		 ((TeX-process-get-variable name
-					    'TeX-command-next
-					    TeX-command-Show))
-		 (TeX-command-Show)))
+  (let* ((default (TeX-command-default name))
          (completion-ignore-case t)
          (answer (or TeX-command-force
                      (completing-read
@@ -762,7 +875,8 @@ Return the new process."
 (defun TeX-run-set-command (name command)
   "Remember TeX command to use to NAME and set corresponding output extension."
   (setq TeX-command-default name
-	TeX-output-extension (if TeX-PDF-mode "pdf" "dvi"))
+	TeX-output-extension
+	(if (and (null TeX-PDF-via-dvips-ps2pdf) TeX-PDF-mode) "pdf" "dvi"))
   (let ((case-fold-search t)
 	(lst TeX-command-output-list))
     (while lst
@@ -842,6 +956,22 @@ run of `TeX-run-TeX', use
   "Create a process for NAME using COMMAND to format FILE with Biber."
   (let ((process (TeX-run-command name command file)))
     (setq TeX-sentinel-function 'TeX-Biber-sentinel)
+    (if TeX-process-asynchronous
+        process
+      (TeX-synchronous-sentinel name file process))))
+
+(defun TeX-run-dvips (name command file)
+  "Create a process for NAME using COMMAND to convert FILE with dvips."
+  (let ((process (TeX-run-command name command file)))
+    (setq TeX-sentinel-function 'TeX-dvips-sentinel)
+    (if TeX-process-asynchronous
+        process
+      (TeX-synchronous-sentinel name file process))))
+
+(defun TeX-run-ps2pdf (name command file)
+  "Create a process for NAME using COMMAND to convert FILE with ps2pdf."
+  (let ((process (TeX-run-command name command file)))
+    (setq TeX-sentinel-function 'TeX-ps2pdf-sentinel)
     (if TeX-process-asynchronous
         process
       (TeX-synchronous-sentinel name file process))))
@@ -1059,7 +1189,10 @@ errors or warnings to show."
 	(TeX-parse-all-errors))
     (if (and TeX-error-overview-open-after-TeX-run TeX-error-list)
 	(TeX-error-overview))
-    (setq TeX-command-next TeX-command-Show)))
+    (if (with-current-buffer TeX-command-buffer
+	  (and TeX-PDF-via-dvips-ps2pdf TeX-PDF-mode))
+	(setq TeX-command-next "Dvips")
+      (setq TeX-command-next TeX-command-Show))))
 
 (defun TeX-current-pages ()
   "Return string indicating the number of pages formatted."
@@ -1100,7 +1233,10 @@ Return nil ifs no errors were found."
 					    'TeX-current-master))
 			 t))
 	t)
-    (setq TeX-command-next TeX-command-Show)
+    (if (with-current-buffer TeX-command-buffer
+	  (and TeX-PDF-via-dvips-ps2pdf TeX-PDF-mode))
+	(setq TeX-command-next "Dvips")
+      (setq TeX-command-next TeX-command-Show))
     nil))
 
 (defun TeX-LaTeX-sentinel-has-warnings ()
@@ -1182,12 +1318,18 @@ Rerun to get outlines right" nil t)
 	((re-search-forward "^LaTeX Warning: Reference" nil t)
 	 (message "%s%s%s" name ": there were unresolved references, "
 		  (TeX-current-pages))
-	 (setq TeX-command-next TeX-command-Show))
+	 (if (with-current-buffer TeX-command-buffer
+	       (and TeX-PDF-via-dvips-ps2pdf TeX-PDF-mode))
+	     (setq TeX-command-next "Dvips")
+	   (setq TeX-command-next TeX-command-Show)))
 	((re-search-forward "^\\(?:LaTeX Warning: Citation\\|\
 Package natbib Warning:.*undefined citations\\)" nil t)
 	 (message "%s%s%s" name ": there were unresolved citations, "
 		  (TeX-current-pages))
-	 (setq TeX-command-next TeX-command-Show))
+	 (if (with-current-buffer TeX-command-buffer
+	       (and TeX-PDF-via-dvips-ps2pdf TeX-PDF-mode))
+	     (setq TeX-command-next "Dvips")
+	   (setq TeX-command-next TeX-command-Show)))
 	((re-search-forward "Package longtable Warning: Table widths have \
 changed\\. Rerun LaTeX\\." nil t)
 	 (message
@@ -1213,7 +1355,10 @@ Rerun to get mark in right position\\." nil t)
 				    ")"))))
 	   (message "%s" (concat name ": successfully formatted "
 				 (TeX-current-pages) add-info)))
-	 (setq TeX-command-next TeX-command-Show))
+	 (if (with-current-buffer TeX-command-buffer
+	       (and TeX-PDF-via-dvips-ps2pdf TeX-PDF-mode))
+	     (setq TeX-command-next "Dvips")
+	   (setq TeX-command-next TeX-command-Show)))
 	(t
 	 (message "%s%s%s" name ": problems after " (TeX-current-pages))
 	 (setq TeX-command-next TeX-command-default)))
@@ -1267,6 +1412,52 @@ Rerun to get mark in right position\\." nil t)
     (message (concat "Biber finished successfully. "
                      "Run LaTeX again to get citations right."))
     (setq TeX-command-next TeX-command-default))))
+
+(defun TeX-dvips-sentinel (_process _name)
+  "Cleanup TeX output buffer after running dvips."
+  (goto-char (point-max))
+  (cond
+   ((search-backward "TeX Output exited abnormally" nil t)
+    (message "Dvips failed.  Type `%s' to display output."
+	     (substitute-command-keys
+              "\\<TeX-mode-map>\\[TeX-recenter-output-buffer]")))
+   (t
+    (if (with-current-buffer TeX-command-buffer
+	  (and TeX-PDF-via-dvips-ps2pdf TeX-PDF-mode))
+	(setq TeX-output-extension "ps"
+	      TeX-command-next "Ps2pdf"))
+    (message "Dvips finished successfully. "))))
+
+(defun TeX-ps2pdf-sentinel (_process _name)
+  "Cleanup TeX output buffer after running ps2pdf."
+  (goto-char (point-max))
+  (cond
+   ((search-backward "TeX Output exited abnormally" nil t)
+    (message "ps2pdf failed.  Type `%s' to display output."
+	     (substitute-command-keys
+              "\\<TeX-mode-map>\\[TeX-recenter-output-buffer]")))
+   (t
+    (if (with-current-buffer TeX-command-buffer
+	  (and TeX-PDF-via-dvips-ps2pdf TeX-PDF-mode))
+	(setq TeX-command-next TeX-command-Show
+	      TeX-output-extension "pdf"))
+    (message "ps2pdf finished successfully. "))))
+
+(defun TeX-command-sequence-sentinel (process string)
+  "Call the appropriate sentinel for the current process.
+
+If there are no errors, call back `TeX-command-sequence' using
+`TeX-command-sequence-command' as command argument, unless this
+variable is nil."
+  (with-current-buffer (process-buffer process)
+    (funcall TeX-command-sequence-sentinel process string)
+    (if (string-match "\\(finished\\|exited\\)" string)
+	(with-current-buffer TeX-command-buffer
+	  (unless
+	      (or
+	       (plist-get TeX-error-report-switches (intern (TeX-master-file)))
+	       (null TeX-command-sequence-command))
+	    (TeX-command-sequence TeX-command-sequence-command))))))
 
 ;;; Process Control
 
@@ -1741,7 +1932,7 @@ If optional argument REPARSE is non-nil, reparse the output log."
 ;; be ignored, because `TeX-next-error' can call any of these functions.
 (defun TeX-parse-command (arg reparse)
   "We can't parse anything but TeX."
-  (error "I cannot parse %s output, sorry."
+  (error "I cannot parse %s output, sorry"
 	 (if (TeX-active-process)
 	     (process-name (TeX-active-process))
 	   "this")))
@@ -3008,7 +3199,7 @@ forward, if negative)."
           (TeX-command name (if (string-match "_region_" file)
                                 'TeX-region-file
                               'TeX-master-file))))
-    (error "Unable to find what command to run.")))
+    (error "Unable to find what command to run")))
 
 (provide 'tex-buf)
 

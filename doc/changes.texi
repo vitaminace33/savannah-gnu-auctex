@@ -1,5 +1,5 @@
 @c This is part of the AUCTeX manual.
-@c Copyright (C) 1994-2002, 2004-2010, 2012-2014 Free Software
+@c Copyright (C) 1994-2002, 2004-2010, 2012-2015 Free Software
 @c Foundation, Inc.
 @c See file auctex.texi for copying conditions.
 @include macros.texi
@@ -12,6 +12,11 @@
 
 @itemize @bullet
 @item
+You can now run all commands needed to compile a document and then open
+the viewer with a single command: @code{TeX-update}, bound to @kbd{C-c
+C-u}.
+
+@item
 Commands such as LaTeX and View can now be executed conveniently on the
 current section (or part, chapter, subsection, etc).  See
 @code{LaTeX-command-section} and
@@ -23,6 +28,11 @@ Also see the documentation at @xref{Starting a Command}.
 @item
 Forward and backward search with Evince now also work when only a region
 of the document is compiled/viewed.
+
+@item
+With new option @code{TeX-PDF-via-dvips-ps2pdf} it is possible to
+compile a document to @acronym{DVI} and then convert it to @acronym{PDF}
+using @command{dvips}--@command{ps2pdf} before viewing it.
 
 @item
 New option @code{TeX-file-line-error} allows to select file:line:error
