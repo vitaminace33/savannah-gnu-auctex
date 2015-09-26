@@ -1,3 +1,48 @@
+2015-09-25  Arash Esbati  <esbati@gmx.de>
+
+	* Makefile.in (STYLESRC): Add new style.
+
+	* style/subcaption.el: New file.
+
+	* style/caption.el (LaTeX-caption-key-val-options): Fix values of hypcap-key.
+	(LaTeX-caption-update-key-val-options): Add support for
+	subcaption.el if loaded.
+	(LaTeX-arg-caption-captionbox): Do not query for the third
+	optional arg. if the second one is empty.
+	("caption"): Add support for all lowercase \continuedfloat*?.
+	("caption"): Fix fontification for \captionof.
+
+	* style/hyperref.el ("hyperref"): Make
+	`LaTeX-indent-environment-list' local before adding new env's.
+
+	* style/filecontents.el ("filecontents"): Make
+	`LaTeX-indent-environment-list' local before adding new env's.
+
+	* style/fontenc.el: Fix mail address in Maintainer-header.
+
+2015-09-25  Mosè Giordano  <mose@gnu.org>
+
+	* latex.el (LaTeX-common-initialization): Remove "abstract"
+	environment, it is not defined in latex.ltx.
+
+	* style/amsart.el ("amsart"): Add "abstract" environment.
+
+	* style/amsbook.el ("amsbook"): Ditto.
+
+	* style/article.el ("article"): Ditto.
+
+	* style/memoir.el ("memoir"): Ditto.
+
+	* style/report.el ("report"): Ditto.
+
+	* style/scrartcl.el ("scrartcl"): Ditto.
+
+	* style/scrreprt.el ("scrreprt"): Ditto.
+
+2015-09-24  Mosè Giordano  <mose@gnu.org>
+
+	* tex.el (TeX-doc): Use default argument of `completing-read'.
+
 2015-09-22  Tassilo Horn  <tsdh@gnu.org>
 
 	* latex.el (LaTeX-find-matching-end): Find correct end when point
