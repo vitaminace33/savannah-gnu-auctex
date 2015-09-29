@@ -1,3 +1,24 @@
+2015-09-28  Mosè Giordano  <mose@gnu.org>
+
+	* style/newfloat.el: Do not require cl at loading time.
+	(LaTeX-newfloat-auto-cleanup): Append elements to
+	`LaTeX-label-alist' in order not to override possible custom
+	values.
+
+2015-09-27  Arash Esbati  <esbati@gmx.de>
+
+	* Makefile.in (STYLESRC): Add new style.
+
+	* style/newfloat.el: New file.
+
+	* style/longtable.el ("longtable"): Make package lengths available
+	through `LaTeX-add-lengths' and not `TeX-add-symbol'.
+
+2015-09-26  Mosè Giordano  <mose@gnu.org>
+
+	* tex.el (TeX-search-files-kpathsea): Remove duplicates
+	directories.
+
 2015-09-26  Tassilo Horn  <tsdh@gnu.org>
 
 	* tex.el (TeX--prettify-symbols-compose-p): New function.
