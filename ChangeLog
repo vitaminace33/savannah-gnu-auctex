@@ -1,3 +1,72 @@
+2015-10-09  Tassilo Horn  <tsdh@gnu.org>
+
+	* latex.el (LaTeX-fill-move-to-break-point): Fill $...$ like
+	\(...\) (bug#21645)
+
+2015-10-08  Mosè Giordano  <mose@gnu.org>
+
+	* tex.el (TeX-expand-list-builtin): New variable.
+	(TeX-expand-list): Move all entries to `TeX-expand-list-builtin'
+	and update docstring.
+	(TeX-expand-list): New function.
+
+	* tex-buf.el (TeX-command-expand): Use `TeX-expand-list' function.
+
+	* doc/auctex.texi (Starting Viewers): Mention
+	`TeX-expand-list-builtin'.
+
+	* doc/changes.texi: Mention change to `TeX-expand-list'.
+
+2015-10-08  Arash Esbati  <esbati@gmx.de>
+
+	* style/longtable.el ("longtable"): Use `LaTeX-add-counters' on
+	"LTchunksize" and not `TeX-add-symbols'.
+
+	* style/enumitem.el (LaTeX-arg-SetEnumitemKey): Remove unused
+	`prompt' from arguments list.
+	(LaTeX-arg-SetEnumitemValue): ditto.
+
+	* style/listings.el (LaTeX-listings-key-val-options-local): New
+	variable used for all key-val queries.
+	("listings-lstdefinestyle"): Add parsing support for
+	"\lstdefinestyle".
+	(LaTeX-listings-lstnewenvironment-regexp): Add missing "s" to
+	"listing".
+	(LaTeX-listings-update-style-key): New function adding newly
+	defined values to "style" key in
+	`LaTeX-listings-key-val-options-local'.
+	("listings"): Extend "lstdefinestyle".
+
+	* style/wrapfig.el ("wrapfig"): Check for new floating
+	environments definded through "newfloat.el" and offer them as
+	completion to "wrapfloat" environment.
+
+2015-10-05  Mosè Giordano  <mose@gnu.org>
+
+	* context.el (TeX-ConTeXt-sentinel): Parse ConTeXt Mark IV output.
+
+	* tex-buf.el (TeX-TeX-sentinel-check): Ditto.
+
+2015-10-05  Arash Esbati  <esbati@gmx.de>
+
+	* style/newfloat.el (LaTeX-newfloat-auto-cleanup): Check if
+	`LaTeX-caption-supported-float-types' from caption.el is bound and
+	update it accordingly.  Fix docstring.
+	("newfloat"): Fix wrong check with (LaTeX-largest-level).
+	("newfloat"): Use `LaTeX-newfloat-key-val-options-local' and
+	delete redundant code.
+
+2015-10-04  Mosè Giordano  <mose@gnu.org>
+
+	* context.el (ConTeXt-Mark-version): New customizable and
+	safe-local variable.
+	(ConTeXt-expand-command): New function.
+	(ConTeXt-expand-options): Use `ConTeXt-Mark-version'.
+
+	* tex.el (TeX-command-list): Use %(cntxcom) expander in all
+	ConTeXt programs.  Remove MkIV entry.
+	(TeX-expand-list): Add %(cntxcom).
+
 2015-10-04  Tassilo Horn  <tsdh@gnu.org>
 
 	* font-latex.el (font-latex-math-environments): Add math
