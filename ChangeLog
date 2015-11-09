@@ -1,3 +1,44 @@
+2015-11-08  Mosè Giordano  <mose@gnu.org>
+
+	* tex-info.el (TeX-texinfo-mode): Set `TeX-output-extension'.
+	Remove compatibility code with old Emacsen.
+
+2015-11-06  Mosè Giordano  <mose@gnu.org>
+
+	* tex-buf.el (TeX-check-TeX, TeX-check-TeX-command-not-found): New
+	customizable options.
+	(TeX-command): Do a better check for the presence of a TeX
+	distribution.  Run `call-process' instead of `executable-find',
+	like `TeX-run-command' actually does.  The point is that
+	`call-process' and `start-process' use `PATH' environment
+	variable, `executable-find' uses `exec-path' variable and they do
+	not need to match, but we should check what `TeX-run-command' will
+	really do.
+
+	* doc/auctex.texi (Processor Options): Document `TeX-check-TeX'.
+
+	* doc/changes.texi: Mention `TeX-check-TeX'.
+
+2015-11-03  Mosè Giordano  <mose@gnu.org>
+
+	* doc/auctex.texi (Processor Options): Document
+	`ConTeXt-Mark-version'.
+	(Multifile): Mention `dwim' value for `TeX-master'.
+
+	* doc/changes.texi: Mention `ConTeXt-Mark-version'.
+
+2015-11-02  Mosè Giordano  <mose@gnu.org>
+
+	* latex.el (TeX-arg-document): When `TeX-arg-input-file-search' is
+	nil, use `LaTeX-style-list' to complete document classes.  Fixes
+	bug#21814.
+
+2015-10-31  Arash Esbati  <esbati@gmx.de>
+
+	* Makefile.in (STYLESRC): Add new style.
+
+	* style/hologo.el: New file.
+
 2015-10-28  Tassilo Horn  <tsdh@gnu.org>
 
 	* latex.el (LaTeX-fill-break-at-separators): Default to nil

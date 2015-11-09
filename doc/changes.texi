@@ -56,9 +56,19 @@ built-in expanders.  You might want to keep in @code{TeX-expand-list}
 only new expansion strings.
 
 @item
-When new option @code{TeX-check-engine} is non-nil, before running
-@LaTeX{} commands @AUCTeX{} will check whether the correct engine has
-been set, based upon known restrictions posed by @LaTeX{} packages.
+Before running commands like @TeX{} and @LaTeX{}, now @AUCTeX{} performs
+some checks.  If @code{TeX-check-TeX} is non-nil, it will test whether a
+working @TeX{} distribution is actually present in the system and
+available to Emacs.  Instead, when @code{TeX-check-engine} is non-nil,
+before running @LaTeX{} commands @AUCTeX{} will check whether the
+correct engine has been set, based upon known restrictions posed by
+@LaTeX{} packages.
+
+@item
+Basic support to @ConTeXt{} Mark IV has been added.  Users can now
+select the Mark version to be used with new option
+@code{ConTeXt-Mark-version}, and @AUCTeX{} is able to catch error
+messages in the output log of a Mark IV document.
 @end itemize
 
 @heading News in 11.88
