@@ -1,3 +1,17 @@
+2015-11-10  Santiago Saavedra  <ssaavedra@gpul.org>  (tiny change)
+
+	* tex.el (TeX-command-list, TeX-view-program-list-builtin)
+	(TeX-view-program-selection): Add dvi2tty as a first-class
+	command, removing it from a load-time quasiquotation so that the
+	strategy for selecting it or evince goes down to the frame
+	performing the View command.  Fixes bug#21873.
+
+2015-11-09  Mosè Giordano  <mose@gnu.org>
+
+	* tex-info.el: Update copyright years.
+	(Texinfo-nodename-de-escape, Texinfo-nodename-escape): Use
+	`TeX-assoc-string' in place of `assoc-string'.
+
 2015-11-08  Mosè Giordano  <mose@gnu.org>
 
 	* tex-info.el (TeX-texinfo-mode): Set `TeX-output-extension'.
