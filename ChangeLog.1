@@ -1,3 +1,57 @@
+2015-11-13  Mosè Giordano  <mose@gnu.org>
+
+	* Version 11.89 released.
+
+2015-11-12  Mosè Giordano  <mose@gnu.org>
+
+	* RELEASE: Update AUCTeX version, the new features section, and
+	the list of contributors.
+
+	* configure.ac: Update AUCTeX version.
+
+	* doc/changes.texi: Mention PDF Tools and generic features for
+	11.89 release.
+
+	* doc/tex-ref.tex: Update AUCTeX version and copyright years
+	across the file.
+
+	* latex.el: Update copyright year.
+
+	* latex/preview.dtx: Manually update release version.
+
+	* Makefile.in (WEMACSPACKAGE): Update for Emacs 24.5
+	(www-doc): Download gendocs.sh patch from AUCTeX repository.
+
+	* tex.el (TeX-view-predicate-list-bultin): For
+	`has-no-display-manager' predicate, use the current test only for
+	old Emacsen, otherwise employ `display-graphic-p'.  Suggested by
+	Santiago Saavedra.
+
+2015-11-11  Mosè Giordano  <mose@gnu.org>
+
+	* tests/latex/latex-test.el (LaTeX-math-indent)
+	(LaTeX-change-environment-with-esc): New tests.
+
+	* tests/latex/math-indent-in.tex: New test file.
+
+	* tests/latex/math-indent-out.tex: Ditto.
+
+2015-11-10  Mosè Giordano  <mose@gnu.org>
+
+	* latex.el (LaTeX-fill-break-at-separators): Change default value
+	to opening only inline and display math switches.
+
+	* tests/latex/latex-filling-in.tex: New test file.
+
+	* tests/latex/latex-filling-out.tex: Ditto.
+
+	* tests/latex/latex-test.el (LaTeX-indent-tabular-test/in)
+	(LaTeX-indent-tabular-test/out): Remove variables defined with
+	`defvar'.
+	(AUCTeX-set-ert-path): New function for setting the path of the
+	ERT test files.
+	(LaTeX-filling): New ERT test.
+
 2015-11-10  Tassilo Horn  <tsdh@gnu.org>
 
 	* tex-buf.el (TeX-revert-document-buffer): New function.
