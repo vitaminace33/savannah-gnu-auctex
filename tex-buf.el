@@ -2266,7 +2266,7 @@ Return non-nil if an error or warning is found."
 	  "^\\(\\(?:Overfull\\|Underfull\\|Tight\\|Loose\\)\
  \\\\.*?[0-9]+--[0-9]+\\)\\|"
 	  ;; LaTeX warning
-	  "^\\(LaTeX [A-Za-z]*\\|Package [A-Za-z0-9]+ \\)Warning:.*"))
+	  "^\\(\\(?:LaTeX [A-Za-z]*\\|Package [A-Za-z0-9]+ \\)Warning:.*\\)"))
 	(error-found nil))
     (while
 	(cond
