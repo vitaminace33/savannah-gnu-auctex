@@ -6416,12 +6416,17 @@ function would return non-nil and `(match-string 1)' would return
   (setq TeX-font-list (default-value 'TeX-font-list))
   (setq TeX-font-replace-function
 	(default-value 'TeX-font-replace-function))
+
+  (TeX-run-style-hooks "LaTeX-core")
+
   (run-hooks 'LaTeX2-hook))
 
 ;; Use new fonts for `\documentclass' documents.
 (defun LaTeX-apply-latex2e-style ()
   (setq TeX-font-list LaTeX-font-list)
   (setq TeX-font-replace-function 'TeX-font-replace-macro)
+
+  (TeX-run-style-hooks "LaTeX-core")
 
   (LaTeX-add-environments
    '("filecontents" LaTeX-env-contents)
